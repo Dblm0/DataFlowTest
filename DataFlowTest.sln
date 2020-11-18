@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30711.63
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataFlowTest", "DataFlowTest\DataFlowTest.csproj", "{9421C74A-39F4-4629-A1DE-8BCACCD7BBEB}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataFlowTheory", "DataFlowTheory\DataFlowTheory.csproj", "{0686B173-9AFD-426E-8602-C201B4B39BA2}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9421C74A-39F4-4629-A1DE-8BCACCD7BBEB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9421C74A-39F4-4629-A1DE-8BCACCD7BBEB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9421C74A-39F4-4629-A1DE-8BCACCD7BBEB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9421C74A-39F4-4629-A1DE-8BCACCD7BBEB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0686B173-9AFD-426E-8602-C201B4B39BA2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0686B173-9AFD-426E-8602-C201B4B39BA2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0686B173-9AFD-426E-8602-C201B4B39BA2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0686B173-9AFD-426E-8602-C201B4B39BA2}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A0C93D77-4A6A-4E25-9B25-C4E236C05AF4}
+	EndGlobalSection
+EndGlobal

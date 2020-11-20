@@ -21,7 +21,7 @@ namespace DataFlowTheory
             _postBlock.Completion.ContinueWith(x => _output.Complete());
         }
         public int PacketsDelayMilliseconds { get; }
-        async Task PostToOutput(T item)
+        Task PostToOutput(T item)
         {
             return Task.WhenAll(_outputBlock.SendAsync(item), Task.Delay(PacketsDelayMilliseconds));
         }

@@ -18,6 +18,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\ChannelsTheory\ChannelsTheory.csproj" />
 		<ProjectReference Include="..\DataFlowTheory\DataFlowTheory.csproj" />
 	</ItemGroup>
 

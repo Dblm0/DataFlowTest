@@ -71,7 +71,7 @@ namespace DataFlowTest
                 var delay = delays[i];
                 var block = new BufferBlock<int>(new() { BoundedCapacity = 1 });
                 stats[i] = _helper.MeasureDelaysAsync(block);
-                var t = _helper.ProduceDataAsync(block, i, 100, delay).ContinueWith(x => block.Complete());
+                var t = _helper.ProduceDataAsync(block, i, 1000, delay).ContinueWith(x => block.Complete());
             }
             var statCollection = await Task.WhenAll(stats);
             OxyPlotExporter.ToPNG("ParallelOneToOneBufferBlock.png", $"target delays ({string.Join(", ", delays)}) ms", statCollection);
@@ -93,7 +93,7 @@ namespace DataFlowTest
             for (int i = 0; i < N; i++)
             {
                 var delay = delays[i];
-                producers[i] = _helper.ProduceDataAsync(block, i, 100, delay);
+                producers[i] = _helper.ProduceDataAsync(block, i, 1000, delay);
             }
             var prods = Task.WhenAll(producers).ContinueWith(x => block.Complete());
             var statResult = await statsTask;
@@ -113,7 +113,7 @@ namespace DataFlowTest
             for (int i = 0; i < N; i++)
             {
                 var delay = delays[i];
-                var block = new ConsumerBasedDelayBlock<int>(delay);
+                var block = new DelayBlock<int>(delay);
                 stats[i] = _helper.MeasureDelaysAsync(block);
                 var t = _helper.ProduceDataAsync(block, i, 100).ContinueWith(x => block.Complete());
             }

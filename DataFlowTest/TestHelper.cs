@@ -57,17 +57,18 @@ namespace DataFlowTest
         {
             foreach (var i in Enumerable.Repeat(item, count))
             {
-                await block.SendAsync(i);
-                await TaskHelper.Sleep(delay);          
+                await block.SendAsync(i).ConfigureAwait(false);
+                await Task.Delay(delay).ConfigureAwait(false);
             }
         }
 
-        public async Task ProduceDataAsync(ChannelWriter<int> channel, int item, int count, int delay)
+        public async Task ProduceDataAsync(ChannelWriter<int> channel, int item, int count, int delay = 0)
         {
             foreach (var i in Enumerable.Repeat(item, count))
             {
-                await channel.WriteAsync(i);
-                await TaskHelper.Sleep(delay);
+                var delayTask = Task.Delay(delay).ConfigureAwait(false);
+                await channel.WriteAsync(i).ConfigureAwait(false);
+                await delayTask;
             }
         }
 
@@ -97,6 +98,27 @@ namespace DataFlowTest
                 stopwatches[x].Restart();
             }
             return stats;
+        }
+        public async Task<IList<double>> MeasureDelaysAsync(ChannelReader<int> channel)
+        {
+            var stat = new List<double>();
+            var stopwatch = Stopwatch.StartNew();
+            await foreach (var _ in channel.ReadAllAsync().ConfigureAwait(false))
+            {
+                stopwatch.Stop();
+                stat.Add(stopwatch.ElapsedMilliseconds);
+                stopwatch.Restart();
+            }
+            return stat;
+        }
+        public async Task<IList<double>> CollectDataAsync(ChannelReader<int> channel)
+        {
+            var data = new List<double>();
+            await foreach (var item in channel.ReadAllAsync())
+            {
+                data.Add(item);
+            }
+            return data;
         }
     }
 }

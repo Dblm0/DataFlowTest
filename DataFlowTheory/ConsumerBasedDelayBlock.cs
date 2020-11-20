@@ -16,7 +16,7 @@ namespace DataFlowTheory
             {
                 while (await _inputBlock.OutputAvailableAsync().ConfigureAwait(false))
                 {
-                    await Task.WhenAll(_outputBlock.SendAsync(_inputBlock.Receive()), TaskHelper.Sleep(PacketsDelayMilliseconds));
+                    await Task.WhenAll(_outputBlock.SendAsync(_inputBlock.Receive()), Task.Delay(PacketsDelayMilliseconds));
                 }
                 _outputBlock.Complete();
             }).ConfigureAwait(false);

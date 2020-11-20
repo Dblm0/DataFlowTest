@@ -21,11 +21,9 @@ namespace DataFlowTheory
             _postBlock.Completion.ContinueWith(x => _output.Complete());
         }
         public int PacketsDelayMilliseconds { get; }
-        Task PostToOutput(T item)
+        async Task PostToOutput(T item)
         {
-            // Сначала отправляем, потом ждём
-            // Результат будет как только сможем отправить пакет в _outputBlock, но не раньше интервала PacketsDelayMilliseconds
-            return Task.WhenAll(_outputBlock.SendAsync(item), TaskHelper.Sleep(PacketsDelayMilliseconds));
+            return Task.WhenAll(_outputBlock.SendAsync(item), Task.Delay(PacketsDelayMilliseconds));
         }
         ActionBlock<T> _postBlock;
         BufferBlock<T> _outputBlock = new BufferBlock<T>(new DataflowBlockOptions { BoundedCapacity = 1 });

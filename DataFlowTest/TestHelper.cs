@@ -42,9 +42,8 @@ namespace DataFlowTest
         }
         public async Task<IList<double>> MeasureDelaysAsync(ISourceBlock<int> block)
         {
-            Stopwatch sw = new Stopwatch();
             var stats = new List<double>();
-
+            Stopwatch sw = Stopwatch.StartNew();
             while (await block.OutputAvailableAsync().ConfigureAwait(false))
             {
                 block.Receive();
@@ -59,7 +58,7 @@ namespace DataFlowTest
             foreach (var i in Enumerable.Repeat(item, count))
             {
                 await block.SendAsync(i);
-                await TaskHelper.Sleep(delay);
+                await TaskHelper.Sleep(delay);          
             }
         }
 

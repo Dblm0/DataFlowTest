@@ -26,8 +26,8 @@ namespace DataFlowTest
         public async Task SingleDelayBlockTest(int delay)
         {
             var block = new BufferBlock<int>(new() { BoundedCapacity = 1 });
-            var t = _helper.ProduceDataAsync(block, 0, 100, delay).ContinueWith(x => block.Complete());
-            var res = await _helper.MeasureDataAsync(block);
+            var t = block.ProduceDataAsync(0, 100, delay).ContinueWith(x => block.Complete());
+            var res = await block.MeasureDataAsync();
             var delays = res.Delays[-1];
             OxyPlotExporter.ToPNG($"SingleDelayBlockTest_{delay}.png", $"target delay: {delay} ms", delays);
             _helper.AssertStats(delays, delay, delay * 0.1, skip: 3);
@@ -44,11 +44,11 @@ namespace DataFlowTest
             {
                 var block = new DelayBlock<int>(delays[i]);
                 block.LinkTo(finalBlock, new() { PropagateCompletion = false });
-                var t = _helper.ProduceDataAsync(block, i, 300).ContinueWith(x => block.Complete());
+                var t = block.ProduceDataAsync(i, 300).ContinueWith(x => block.Complete());
                 producers[i] = block.Completion;
             }
             var keys = Enumerable.Range(0, N).ToArray();
-            var measTask = _helper.MeasureDataAsync(finalBlock, keys);
+            var measTask = finalBlock.MeasureDataAsync(keys);
             var prods = Task.WhenAll(producers).ContinueWith(x => finalBlock.Complete());
             var meas = await measTask;
 
@@ -71,8 +71,8 @@ namespace DataFlowTest
             {
                 var delay = delays[i];
                 var block = new BufferBlock<int>(new() { BoundedCapacity = 1 });
-                measurments[i] = _helper.MeasureDataAsync(block);
-                var t = _helper.ProduceDataAsync(block, i, 100, delay).ContinueWith(x => block.Complete());
+                measurments[i] = block.MeasureDataAsync();
+                var t = block.ProduceDataAsync(i, 100, delay).ContinueWith(x => block.Complete());
             }
             var measCollection = await Task.WhenAll(measurments);
             var statCollection = measCollection.Select(x => x.Delays[-1]).ToArray();
@@ -94,9 +94,9 @@ namespace DataFlowTest
             for (int i = 0; i < N; i++)
             {
                 var delay = delays[i];
-                producers[i] = _helper.ProduceDataAsync(block, i, 100, delay);
+                producers[i] = block.ProduceDataAsync(i, 100, delay);
             }
-            var measTask = _helper.MeasureDataAsync(block, keys);
+            var measTask = block.MeasureDataAsync(keys);
             var prods = Task.WhenAll(producers).ContinueWith(x => block.Complete());
             var measResult = await measTask;
             var statCollection = measResult.Delays.Values.ToArray();
@@ -116,8 +116,8 @@ namespace DataFlowTest
             {
                 var delay = delays[i];
                 var block = new DelayBlock<int>(delay);
-                measurments[i] = _helper.MeasureDataAsync(block);
-                var t = _helper.ProduceDataAsync(block, i, 100).ContinueWith(x => block.Complete());
+                measurments[i] = block.MeasureDataAsync();
+                var t = block.ProduceDataAsync(i, 100).ContinueWith(x => block.Complete());
             }
             var measCollection = await Task.WhenAll(measurments);
             var statCollection = measCollection.Select(x => x.Delays[-1]).ToArray();

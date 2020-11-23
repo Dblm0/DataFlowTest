@@ -25,11 +25,12 @@ namespace DataFlowTest
         [InlineData(20)]
         public async Task SingleDelayBlockTest(int delay)
         {
-            var block = new DelayBlock<int>(delay);
-            var t = _helper.ProduceDataAsync(block, 0, 300).ContinueWith(x => block.Complete());
-            var res = await _helper.MeasureDelaysAsync(block);
-            OxyPlotExporter.ToPNG($"SingleDelayBlockTest_{delay}.png", $"target delay: {delay} ms", res);
-            _helper.AssertStats(res, delay, delay * 0.1, skip: 3);
+            var block = new BufferBlock<int>(new() { BoundedCapacity = 1 });
+            var t = _helper.ProduceDataAsync(block, 0, 100, delay).ContinueWith(x => block.Complete());
+            var res = await _helper.MeasureDataAsync(block);
+            var delays = res.Delays[-1];
+            OxyPlotExporter.ToPNG($"SingleDelayBlockTest_{delay}.png", $"target delay: {delay} ms", delays);
+            _helper.AssertStats(delays, delay, delay * 0.1, skip: 3);
         }
 
         [Theory]
@@ -47,13 +48,13 @@ namespace DataFlowTest
                 producers[i] = block.Completion;
             }
             var keys = Enumerable.Range(0, N).ToArray();
-            var statTask = _helper.MeasureDelaysAsync(finalBlock, keys);
+            var measTask = _helper.MeasureDataAsync(finalBlock, keys);
             var prods = Task.WhenAll(producers).ContinueWith(x => finalBlock.Complete());
+            var meas = await measTask;
 
-            var stats = await statTask;
-            var statCollection = stats.Values.ToArray();
-            OxyPlotExporter.ToPNG("MultipleProducersBufferTest.png", $"target delays ({string.Join(", ", delays)}) ms", statCollection);
-            foreach (var kvp in stats)
+            var delaysCollection = meas.Delays.Values.ToArray();
+            OxyPlotExporter.ToPNG("MultipleProducersBufferTest.png", $"target delays ({string.Join(", ", delays)}) ms", delaysCollection);
+            foreach (var kvp in meas.Delays)
             {
                 var calcDelay = delays[kvp.Key];
                 _helper.AssertStats(kvp.Value, calcDelay, calcDelay * 0.1, skip: 10);
@@ -65,15 +66,16 @@ namespace DataFlowTest
         public async Task ParallelOneToOneBufferBlock(params int[] delays)
         {
             int N = delays.Length;
-            Task<IList<double>>[] stats = new Task<IList<double>>[N];
+            Task<MeasurmentsData>[] measurments = new Task<MeasurmentsData>[N];
             for (int i = 0; i < N; i++)
             {
                 var delay = delays[i];
                 var block = new BufferBlock<int>(new() { BoundedCapacity = 1 });
-                stats[i] = _helper.MeasureDelaysAsync(block);
-                var t = _helper.ProduceDataAsync(block, i, 1000, delay).ContinueWith(x => block.Complete());
+                measurments[i] = _helper.MeasureDataAsync(block);
+                var t = _helper.ProduceDataAsync(block, i, 100, delay).ContinueWith(x => block.Complete());
             }
-            var statCollection = await Task.WhenAll(stats);
+            var measCollection = await Task.WhenAll(measurments);
+            var statCollection = measCollection.Select(x => x.Delays[-1]).ToArray();
             OxyPlotExporter.ToPNG("ParallelOneToOneBufferBlock.png", $"target delays ({string.Join(", ", delays)}) ms", statCollection);
             foreach (var (delay, st) in delays.Zip(statCollection, (d, s) => (d, s)))
             {
@@ -89,15 +91,15 @@ namespace DataFlowTest
             Task[] producers = new Task[N];
             var block = new BufferBlock<int>(new() { BoundedCapacity = 1 });
             var keys = Enumerable.Range(0, N).ToArray();
-            var statsTask = _helper.MeasureDelaysAsync(block, keys);
             for (int i = 0; i < N; i++)
             {
                 var delay = delays[i];
-                producers[i] = _helper.ProduceDataAsync(block, i, 1000, delay);
+                producers[i] = _helper.ProduceDataAsync(block, i, 100, delay);
             }
+            var measTask = _helper.MeasureDataAsync(block, keys);
             var prods = Task.WhenAll(producers).ContinueWith(x => block.Complete());
-            var statResult = await statsTask;
-            var statCollection = statResult.Values.ToArray();
+            var measResult = await measTask;
+            var statCollection = measResult.Delays.Values.ToArray();
             OxyPlotExporter.ToPNG("SingleManyToOneBufferBlock.png", $"target delays ({string.Join(", ", delays)}) ms", statCollection);
             foreach (var (delay, st) in delays.Zip(statCollection, (d, s) => (d, s)))
             {
@@ -109,15 +111,16 @@ namespace DataFlowTest
         public async Task ParallelOneToOneDelayBlock(params int[] delays)
         {
             int N = delays.Length;
-            Task<IList<double>>[] stats = new Task<IList<double>>[N];
+            Task<MeasurmentsData>[] measurments = new Task<MeasurmentsData>[N];
             for (int i = 0; i < N; i++)
             {
                 var delay = delays[i];
                 var block = new DelayBlock<int>(delay);
-                stats[i] = _helper.MeasureDelaysAsync(block);
+                measurments[i] = _helper.MeasureDataAsync(block);
                 var t = _helper.ProduceDataAsync(block, i, 100).ContinueWith(x => block.Complete());
             }
-            var statCollection = await Task.WhenAll(stats);
+            var measCollection = await Task.WhenAll(measurments);
+            var statCollection = measCollection.Select(x => x.Delays[-1]).ToArray();
             OxyPlotExporter.ToPNG("ParallelOneToOneDelayBlock.png", $"target delays ({string.Join(", ", delays)}) ms", statCollection);
             foreach (var (delay, st) in delays.Zip(statCollection, (d, s) => (d, s)))
             {

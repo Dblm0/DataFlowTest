@@ -31,10 +31,10 @@ namespace DataFlowTest
             }
             var prods = Task.WhenAll(producers).ContinueWith(x => channel.Writer.Complete());
             var keys = Enumerable.Range(0, N).ToArray();
-            var stats = await _helper.MeasureDelaysAsync(channel, keys);
-            var statCollection = stats.Values.ToArray();
+            var meas = await _helper.MeasureDataAsync(channel, keys);
+            var statCollection = meas.Delays.Values.ToArray();
             OxyPlotExporter.ToPNG("MultipleProducersChannelTest.png", $"target delays from {baseDelay} to {baseDelay + (N - 1) * delayShift} ms", statCollection);
-            foreach (var kvp in stats)
+            foreach (var kvp in meas.Delays)
             {
                 var calcDelay = baseDelay + kvp.Key * delayShift;
                 _helper.AssertStats(kvp.Value, calcDelay, calcDelay * 0.1, skip: 10);
@@ -52,10 +52,10 @@ namespace DataFlowTest
             {
                 producers[i] = _helper.ProduceDataAsync(channel, i, 500, delays[i]);
             }
-            var stats = _helper.MeasureDelaysAsync(channel, keys);
+            var stats = _helper.MeasureDataAsync(channel, keys);
             var prods = Task.WhenAll(producers).ContinueWith(x => channel.Writer.Complete());
             var statResult = await stats;
-            var statCollection = statResult.Values.ToArray();
+            var statCollection = statResult.Delays.Values.ToArray();
             OxyPlotExporter.ToPNG("SingleManyToOneChannel.png", $"target delays ({string.Join(", ", delays)}) ms", statCollection);
             foreach (var (delay, st) in delays.Zip(statCollection, (d, s) => (d, s)))
             {
@@ -67,15 +67,16 @@ namespace DataFlowTest
         public async Task ParallelOneToOneChannel(params int[] delays)
         {
             int N = delays.Length;
-            Task<IList<double>>[] stats = new Task<IList<double>>[N];
+            Task<MeasurmentsData>[] measurments = new Task<MeasurmentsData>[N];
             for (int i = 0; i < N; i++)
             {
                 var delay = delays[i];
                 var channel = Channel.CreateBounded<int>(1);
-                stats[i] = _helper.MeasureDelaysAsync(channel);
+                measurments[i] = _helper.MeasureDataAsync(channel);
                 var t = _helper.ProduceDataAsync(channel, i, 100, delay).ContinueWith(x => channel.Writer.Complete());
             }
-            var statCollection = await Task.WhenAll(stats);
+            var measCollection = await Task.WhenAll(measurments);
+            var statCollection = measCollection.Select(x => x.Delays[-1]).ToArray();
             OxyPlotExporter.ToPNG("ParallelOneToOneChannel.png", $"target delays ({string.Join(", ", delays)}) ms", statCollection);
             foreach (var (delay, st) in delays.Zip(statCollection, (d, s) => (d, s)))
             {
@@ -87,15 +88,16 @@ namespace DataFlowTest
         public async Task ParallelOneToOneDelayChannel(params int[] delays)
         {
             int N = delays.Length;
-            Task<IList<double>>[] stats = new Task<IList<double>>[N];
+            Task<MeasurmentsData>[] measurments = new Task<MeasurmentsData>[N];
             for (int i = 0; i < N; i++)
             {
                 var delay = delays[i];
                 var channel = new DelayChannel<int>(delay);
-                stats[i] = _helper.MeasureDelaysAsync(channel);
+                measurments[i] = _helper.MeasureDataAsync(channel);
                 var t = _helper.ProduceDataAsync(channel, i, 750).ContinueWith(x => channel.Writer.Complete());
             }
-            var statCollection = await Task.WhenAll(stats);
+            var measCollection = await Task.WhenAll(measurments);
+            var statCollection = measCollection.Select(x => x.Delays[-1]).ToArray();
             OxyPlotExporter.ToPNG("ParallelOneToOneDelayChannel.png", $"target delays ({string.Join(", ", delays)}) ms", statCollection);
             foreach (var (delay, st) in delays.Zip(statCollection, (d, s) => (d, s)))
             {

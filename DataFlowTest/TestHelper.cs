@@ -19,7 +19,7 @@ namespace DataFlowTest
         {
             _helper = helper;
         }
-        public void AssertStats(IList<double> values, double baseLine, double drift, int skip = 0)
+        public void AssertStats(List<double> values, double baseLine, double drift, int skip = 0)
         {
             var skipped = values.Skip(skip);
             var max = skipped.Max();
@@ -40,28 +40,15 @@ namespace DataFlowTest
                 }
             }
         }
-        public async Task<IList<double>> MeasureDelaysAsync(ISourceBlock<int> block)
-        {
-            var stats = new List<double>();
-            Stopwatch sw = Stopwatch.StartNew();
-            while (await block.OutputAvailableAsync().ConfigureAwait(false))
-            {
-                block.Receive();
-                sw.Stop();
-                stats.Add(sw.ElapsedMilliseconds);
-                sw.Restart();
-            }
-            return stats;
-        }
         public async Task ProduceDataAsync(ITargetBlock<int> block, int item, int count, int delay = 0)
         {
             foreach (var i in Enumerable.Repeat(item, count))
             {
+                var delayTask = Task.Delay(delay).ConfigureAwait(false);
                 await block.SendAsync(i).ConfigureAwait(false);
-                await Task.Delay(delay).ConfigureAwait(false);
+                await delayTask;
             }
         }
-
         public async Task ProduceDataAsync(ChannelWriter<int> channel, int item, int count, int delay = 0)
         {
             foreach (var i in Enumerable.Repeat(item, count))
@@ -72,53 +59,79 @@ namespace DataFlowTest
             }
         }
 
-        public async Task<Dictionary<int, List<double>>> MeasureDelaysAsync(ISourceBlock<int> block, int[] keys)
+        public async Task<MeasurmentsData> MeasureDataAsync(ISourceBlock<int> block)
+        {
+            var stats = new List<double>();
+            var seq = new List<double>();
+            Stopwatch sw = Stopwatch.StartNew();
+            while (await block.OutputAvailableAsync().ConfigureAwait(false))
+            {
+                var item = block.Receive();
+                seq.Add(item);
+                sw.Stop();
+                stats.Add(sw.ElapsedMilliseconds);
+                sw.Restart();
+            }
+            return new MeasurmentsData(new Dictionary<int, List<double>> { [-1] = stats }, seq);
+        }
+
+        public async Task<MeasurmentsData> MeasureDataAsync(ISourceBlock<int> block, int[] keys)
         {
             var stopwatches = keys.ToDictionary(x => x, x => new Stopwatch());
+            var seq = new List<double>();
             var stats = keys.ToDictionary(x => x, x => new List<double>());
 
             while (await block.OutputAvailableAsync().ConfigureAwait(false))
             {
                 var x = block.Receive();
+                seq.Add(x);
                 stopwatches[x].Stop();
                 stats[x].Add(stopwatches[x].ElapsedMilliseconds);
                 stopwatches[x].Restart();
             }
-            return stats;
+            return new MeasurmentsData(stats, seq);
         }
-        public async Task<Dictionary<int, List<double>>> MeasureDelaysAsync(ChannelReader<int> channel, int[] keys)
+
+        public async Task<MeasurmentsData> MeasureDataAsync(ChannelReader<int> channel)
+        {
+            var stats = new List<double>();
+            var seq = new List<double>();
+            Stopwatch sw = Stopwatch.StartNew();
+            await foreach (int x in channel.ReadAllAsync().ConfigureAwait(false))
+            {
+                seq.Add(x);
+                sw.Stop();
+                stats.Add(sw.ElapsedMilliseconds);
+                sw.Restart();
+            }
+            return new MeasurmentsData(new Dictionary<int, List<double>> { [-1] = stats }, seq);
+        }
+        public async Task<MeasurmentsData> MeasureDataAsync(ChannelReader<int> channel, int[] keys)
         {
             var stopwatches = keys.ToDictionary(x => x, x => new Stopwatch());
+            var seq = new List<double>();
             var stats = keys.ToDictionary(x => x, x => new List<double>());
 
             await foreach (int x in channel.ReadAllAsync().ConfigureAwait(false))
             {
+                seq.Add(x);
                 stopwatches[x].Stop();
                 stats[x].Add(stopwatches[x].ElapsedMilliseconds);
                 stopwatches[x].Restart();
             }
-            return stats;
+            return new MeasurmentsData(stats, seq); ;
         }
-        public async Task<IList<double>> MeasureDelaysAsync(ChannelReader<int> channel)
+    }
+
+    class MeasurmentsData
+    {
+        public MeasurmentsData(IReadOnlyDictionary<int, List<double>> delays, List<double> sequence)
         {
-            var stat = new List<double>();
-            var stopwatch = Stopwatch.StartNew();
-            await foreach (var _ in channel.ReadAllAsync().ConfigureAwait(false))
-            {
-                stopwatch.Stop();
-                stat.Add(stopwatch.ElapsedMilliseconds);
-                stopwatch.Restart();
-            }
-            return stat;
+            Delays = delays;
+            Sequence = sequence;
         }
-        public async Task<IList<double>> CollectDataAsync(ChannelReader<int> channel)
-        {
-            var data = new List<double>();
-            await foreach (var item in channel.ReadAllAsync())
-            {
-                data.Add(item);
-            }
-            return data;
-        }
+
+        public IReadOnlyDictionary<int, List<double>> Delays { get; }
+        public List<double> Sequence { get; }
     }
 }

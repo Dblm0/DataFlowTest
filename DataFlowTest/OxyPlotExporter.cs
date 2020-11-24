@@ -26,6 +26,9 @@ namespace DataFlowTest
         }
         public static void ToPNG(string fileName, string plotTitle, MeasurmentsData measData)
         {
+            int resX = 1280;
+            int resY = 1024;
+
             var delaysModel = new PlotModel { Title = plotTitle };
             int i;
             foreach (var data in measData.Delays.Values)
@@ -37,23 +40,27 @@ namespace DataFlowTest
             }
 
             var seqModel = new PlotModel { Title = "Sequence" };
-            var seqSeries = new LineSeries { };
-            i = 0;
-            seqSeries.Points.AddRange(measData.Sequence.Select(x => new DataPoint(i++, x)));
-            seqModel.Series.Add(seqSeries);
+            var indexedSeq = measData.Sequence.Select((x, idx) => (idx, x));
+
+            foreach (var group in indexedSeq.GroupBy(x => x.x))
+            {
+                var seqSeries = new LinearBarSeries { };
+                seqSeries.Points.AddRange(group.Select(x => new DataPoint(x.idx, 1)));
+                seqModel.Series.Add(seqSeries);
+            }
 
             using var delaysPngStream = new MemoryStream();
             using var seqPngStream = new MemoryStream();
 
-            PngExporter.Export(delaysModel, delaysPngStream, 600, 400);
-            PngExporter.Export(seqModel, seqPngStream, 600, 400);
+            PngExporter.Export(delaysModel, delaysPngStream, resX, resY / 2);
+            PngExporter.Export(seqModel, seqPngStream, resX, resY / 2);
 
             using var b1 = new Bitmap(Image.FromStream(delaysPngStream));
             using var b2 = new Bitmap(Image.FromStream(seqPngStream));
-            using var result = new Bitmap(600, 800);
+            using var result = new Bitmap(resX, resY);
             using var g = Graphics.FromImage(result);
             g.DrawImage(b1, 0, 0);
-            g.DrawImage(b2, 0, 400);
+            g.DrawImage(b2, 0, resY / 2);
             result.Save(fileName);
         }
     }

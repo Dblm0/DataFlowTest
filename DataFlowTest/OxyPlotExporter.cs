@@ -1,4 +1,5 @@
 ﻿using OxyPlot;
+using OxyPlot.Legends;
 using OxyPlot.Series;
 using OxyPlot.SkiaSharp;
 using System;
@@ -30,21 +31,23 @@ namespace DataFlowTest
             int resY = 1024;
 
             var delaysModel = new PlotModel { Title = plotTitle };
+            delaysModel.Legends.Add(new Legend { LegendBackground = OxyColors.White, LegendBorder = OxyColors.Black });
             int i;
-            foreach (var data in measData.Delays.Values)
+            foreach (var data in measData.Delays)
             {
-                var line = new LineSeries { };
+                var line = new LineSeries { Title = $"{data.Key}" };
                 delaysModel.Series.Add(line);
                 i = 0;
-                line.Points.AddRange(data.Select(x => new DataPoint(i++, x)));
+                line.Points.AddRange(data.Value.Select(x => new DataPoint(i++, x)));
             }
 
             var seqModel = new PlotModel { Title = "Sequence" };
+            seqModel.Legends.Add(new Legend { LegendBackground = OxyColors.White, LegendBorder = OxyColors.Black });
             var indexedSeq = measData.Sequence.Select((x, idx) => (idx, x));
 
-            foreach (var group in indexedSeq.GroupBy(x => x.x))
+            foreach (var group in indexedSeq.GroupBy(x => x.x).OrderBy(x => x.Key))
             {
-                var seqSeries = new LinearBarSeries { };
+                var seqSeries = new LinearBarSeries { Title = $"{group.Key}" };
                 seqSeries.Points.AddRange(group.Select(x => new DataPoint(x.idx, 1)));
                 seqModel.Series.Add(seqSeries);
             }

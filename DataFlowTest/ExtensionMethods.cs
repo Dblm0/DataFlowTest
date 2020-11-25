@@ -9,13 +9,20 @@ using System.Threading.Tasks.Dataflow;
 
 namespace DataFlowTest
 {
+    static class Helper
+    {
+        public static Task DelaySleep(int ms)
+        {
+            return Task.Run(() => { System.Threading.Thread.Sleep(ms); });
+        }
+    }
     static class DataFlowExtensions
     {
         public static async Task ProduceDataAsync(this ITargetBlock<int> block, int item, int count, int delay = 0)
         {
             foreach (var i in Enumerable.Repeat(item, count))
             {
-                var delayTask = Task.Delay(delay).ConfigureAwait(false);
+                var delayTask = Helper.DelaySleep(delay).ConfigureAwait(false);
                 await block.SendAsync(i).ConfigureAwait(false);
                 await delayTask;
             }
@@ -59,7 +66,7 @@ namespace DataFlowTest
         {
             foreach (var i in Enumerable.Repeat(item, count))
             {
-                var delayTask = Task.Delay(delay).ConfigureAwait(false);
+                var delayTask = Helper.DelaySleep(delay).ConfigureAwait(false);
                 await channel.WriteAsync(i).ConfigureAwait(false);
                 await delayTask;
             }

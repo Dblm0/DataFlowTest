@@ -17,10 +17,12 @@ namespace DataFlowTest
         TestHelper _helper;
         public BuffersTest(ITestOutputHelper helper)
         {
+            Process p = Process.GetCurrentProcess();
+            p.PriorityClass = ProcessPriorityClass.RealTime;
             _helper = new TestHelper(helper);
         }
 
-        [Theory]
+        [Theory]      
         [InlineData(75)]
         [InlineData(20)]
         public async Task SingleDelayBlockTest(int delay)

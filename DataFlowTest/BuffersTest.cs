@@ -22,19 +22,18 @@ namespace DataFlowTest
             _helper = new TestHelper(helper);
         }
 
-        [Theory]      
+        [Theory] 
         [InlineData(75)]
         [InlineData(20)]
         public async Task SingleDelayBlockTest(int delay)
         {
-            var block = new BufferBlock<int>(new() { BoundedCapacity = 1 });
-            var t = block.ProduceDataAsync(0, 100, delay).ContinueWith(x => block.Complete());
+            var block = new DelayBlock<int>(delay);
+            var t = block.ProduceDataAsync(0, 1500).ContinueWith(x => block.Complete());
             var res = await block.MeasureDataAsync();
             var delays = res.Delays[-1];
             OxyPlotExporter.ToPNG($"SingleDelayBlockTest_{delay}.png", $"target delay: {delay} ms", delays);
-            _helper.AssertStats(delays, delay, delay * 0.1, skip: 3);
+            _helper.AssertStats(delays, delay, delay + 10, skip: 3);
         }
-
         [Theory]
         [InlineData(20, 30, 40)]
         public async Task MultipleProducersBufferTest(params int[] delays)

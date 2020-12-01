@@ -62,13 +62,15 @@ namespace DataFlowTest
     }
     static class ChannelExtensions
     {
-        public static async Task ProduceDataAsync(this ChannelWriter<int> channel, int item, int count, int delay = 0)
+        public static async Task ProduceDataAsync(this ChannelWriter<int> channel, int item, int count, bool completeRequired = false)
         {
             foreach (var i in Enumerable.Repeat(item, count))
             {
-                var delayTask = Helper.DelaySleep(delay).ConfigureAwait(false);
-                await channel.WriteAsync(i).ConfigureAwait(false);
-                await delayTask;
+                await channel.WriteAsync(i);
+            }
+            if (completeRequired)
+            {
+                channel.Complete();
             }
         }
         public static async Task<MeasurmentsData> MeasureDataAsync(this ChannelReader<int> channel)

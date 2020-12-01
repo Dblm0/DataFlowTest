@@ -7,8 +7,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataFlowTest", "DataFlowTes
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataFlowTheory", "DataFlowTheory\DataFlowTheory.csproj", "{0686B173-9AFD-426E-8602-C201B4B39BA2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChannelsTheory", "ChannelsTheory\ChannelsTheory.csproj", "{84960F4B-65FA-40DC-81FA-8C34A250607D}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -23,10 +21,6 @@ Global
 		{0686B173-9AFD-426E-8602-C201B4B39BA2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0686B173-9AFD-426E-8602-C201B4B39BA2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0686B173-9AFD-426E-8602-C201B4B39BA2}.Release|Any CPU.Build.0 = Release|Any CPU
-		{84960F4B-65FA-40DC-81FA-8C34A250607D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{84960F4B-65FA-40DC-81FA-8C34A250607D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{84960F4B-65FA-40DC-81FA-8C34A250607D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{84960F4B-65FA-40DC-81FA-8C34A250607D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

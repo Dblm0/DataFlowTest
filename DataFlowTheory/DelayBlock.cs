@@ -14,16 +14,23 @@ namespace DataFlowTheory
         }
         public DelayBlock(int millisecondsDelay = 10)
         {
-            PacketsDelayMilliseconds = millisecondsDelay;
+            PacketsDelayMilliseconds = millisecondsDelay + 1;
             var linkOpts = new DataflowLinkOptions { PropagateCompletion = true };
 
             _postBlock = new ActionBlock<T>(PostToOutput);
             _postBlock.Completion.ContinueWith(x => _output.Complete());
         }
+        Task DelaySleep(int ms) => Task.Run(() => Thread.Sleep(ms));
         public int PacketsDelayMilliseconds { get; }
-        Task PostToOutput(T item)
+        async Task PostToOutput(T item)
         {
-            return Task.WhenAll(_outputBlock.SendAsync(item), Task.Delay(PacketsDelayMilliseconds));
+            await _outputBlock.SendAsync(item);
+
+            while (!_outputBlock.Completion.IsCompleted && _outputBlock.Count != 0) //wait for output to be consumed
+            {
+                await Task.Yield();
+            }
+            await DelaySleep(PacketsDelayMilliseconds);
         }
         ActionBlock<T> _postBlock;
         BufferBlock<T> _outputBlock = new BufferBlock<T>(new DataflowBlockOptions { BoundedCapacity = 1 });

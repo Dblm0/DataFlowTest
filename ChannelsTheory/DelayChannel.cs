@@ -6,9 +6,10 @@ namespace ChannelsTheory
 {
     public class DelayChannel<T> : Channel<T>
     {
+        Task DelayTask(int ms) => Task.Run(() => System.Threading.Thread.Sleep(ms));
         public DelayChannel(int millisecondsDelay)
         {
-            PacketsDelayMilliseconds = millisecondsDelay;
+            PacketsDelayMilliseconds = millisecondsDelay + 1;
             Reader = _output;
             Writer = _input;
 
@@ -18,7 +19,9 @@ namespace ChannelsTheory
                 ChannelWriter<T> outWriter = _output;
                 await foreach (var item in inpReader.ReadAllAsync().ConfigureAwait(false))
                 {
-                    await Task.WhenAll(outWriter.WriteAsync(item).AsTask(), Task.Delay(PacketsDelayMilliseconds));
+                    await outWriter.WriteAsync(item);
+                    await outWriter.WaitToWriteAsync();
+                    await DelayTask(PacketsDelayMilliseconds);
                 }
                 outWriter.Complete();
             });

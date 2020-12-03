@@ -18,14 +18,13 @@ namespace DataFlowTest
     }
     static class DataFlowExtensions
     {
-        public static async Task ProduceDataAsync(this ITargetBlock<int> block, int item, int count, int delay = 0)
+        public static async Task ProduceDataAsync(this ITargetBlock<int> block, int item, int count, bool completionRequired = false)
         {
             foreach (var i in Enumerable.Repeat(item, count))
             {
-                var delayTask = Helper.DelaySleep(delay).ConfigureAwait(false);
                 await block.SendAsync(i).ConfigureAwait(false);
-                await delayTask;
             }
+            if (completionRequired) block.Complete();
         }
         public static async Task<MeasurmentsData> MeasureDataAsync(this ISourceBlock<int> block)
         {

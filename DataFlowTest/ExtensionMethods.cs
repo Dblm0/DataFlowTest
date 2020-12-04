@@ -59,4 +59,42 @@ namespace DataFlowTest
             return new MeasurmentsData(stats, seq);
         }
     }
+    static class DelayedItemProducerExtensions
+    {
+        public static void ProduceData(this DelayedItemProducer<int> producer, int item, int count, bool completionRequired = false)
+        {
+            foreach (var i in Enumerable.Repeat(item, count))
+            {
+                producer.PostItems(i);
+            }
+            if (completionRequired) producer.Complete();
+        }
+
+        public static Task<MeasurmentsData> MeasureDataTask(this DelayedItemProducer<int>[] producers, int[] keys)
+        {
+            return Task.Run(() =>
+            {
+                var stopwatches = keys.ToDictionary(x => x, x => new Stopwatch());
+                var seq = new List<double>();
+                var stats = keys.ToDictionary(x => x, x => new List<double>());
+
+                Queue<DelayedItemProducer<int>> _prodQueue = new(producers);
+
+                while (_prodQueue.Count > 0)
+                {
+                    var prod = _prodQueue.Dequeue();
+                    if (prod.TryReceve(out var x))
+                    {
+                        seq.Add(x);
+                        stopwatches[x].Stop();
+                        stats[x].Add(stopwatches[x].ElapsedMilliseconds);
+                        stopwatches[x].Restart();
+                    }
+                    if (!prod.IsCompleted) _prodQueue.Enqueue(prod);
+                }
+                return new MeasurmentsData(stats, seq);
+            });
+        }
+    }
+
 }
